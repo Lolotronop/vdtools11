@@ -10,7 +10,7 @@
 @set UINSTNAME=Uninstall.exe
 @set MAJORVER=1
 @set MINORVER=1
-@set PATCHVER=0
+@set PATCHVER=1
 @set STARTONHOMEFLAG=StartOnHomeFlag
 @set JUMPINGFLAG=JumpingFlag
 @set DRAGGINGFLAG=DraggingFlag
