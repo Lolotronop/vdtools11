@@ -58,3 +58,6 @@ VD Tools 11 abides by the Unix philosophy of doing one thing and doing it well.
 
 ### If VD Tools 11 is written in C++, why doesn't it make use of more C++ features?
 VD Tools 11 is a Petzold-style application, i.e. it uses mostly plain C.
+
+### How can I prevent SHIFT + CTRL + ALT + WIN from opening Office 365?
+If you want to use SHIFT + CTRL + ALT + WIN + # to move windows between virtual desktops and you have Microsoft Office installed, you might find that pressing SHIFT + CTRL + ALT + WIN brings up Office 365. You can disable this shortcut as described here: https://superuser.com/questions/1794759/how-to-disable-or-remap-the-office-hot-key.
