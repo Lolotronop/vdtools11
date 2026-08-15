@@ -36,16 +36,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /* pCmdLine */, int /*
     uiJumpingChecked = prefJumpingChecked;
     uiDraggingChecked = prefDraggingChecked;
     uiNumberChecked = prefNumberChecked;
+    uiTaskbarScrollChecked = prefTaskbarScrollChecked;
     uiToggleStartOnHome = prefToggleStartOnHome;
     uiToggleJumping = prefToggleJumping;
     uiToggleDragging = prefToggleDragging;
     uiToggleNumber = prefToggleNumber;
+    uiToggleTaskbarScroll = prefToggleTaskbarScroll;
     uiSetInstance(hInstance);
     uiCreateWindow();
     uiAddTrayIcon();
     if (prefJumpingChecked()) uiRegisterJumpKeys();
     if (prefDraggingChecked()) uiRegisterDragKeys();
     if (prefNumberChecked()) uiHookWinEvents();
+    if (prefTaskbarScrollChecked()) uiHookTaskbarScroll();
 
     uiStartMessageLoop();
 

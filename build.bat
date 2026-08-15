@@ -9,22 +9,24 @@
 @set INSTNAME=Install.exe
 @set UINSTNAME=Uninstall.exe
 @set MAJORVER=1
-@set MINORVER=1
-@set PATCHVER=1
+@set MINORVER=2
+@set PATCHVER=0
 @set STARTONHOMEFLAG=StartOnHomeFlag
 @set JUMPINGFLAG=JumpingFlag
 @set DRAGGINGFLAG=DraggingFlag
 @set NUMBERFLAG=NumberFlag
+@set TASKBARSCROLLFLAG=TaskbarScrollFlag
 @set DEFINES=/D_REPODIR="%REPODIR%" /D_BUILDDIR="%BUILDDIR%" /D_RESOURCESDIR="%RESOURCESDIR%"^
  /D_CLASSNAME="%CLASSNAME%" /D_WINDOWNAME="%WINDOWNAME%" /D_APPNAME="%APPNAME%"^
  /D_EXENAME="%EXENAME%" /D_LOGNAME="%LOGNAME%"^
  /D_INSTNAME="%INSTNAME%" /D_UINSTNAME="%UINSTNAME%"^
  /D_MAJORVER="%MAJORVER%" /D_MINORVER="%MINORVER%" /D_PATCHVER="%PATCHVER%"^
  /D_STARTONHOMEFLAG="%STARTONHOMEFLAG%" /D_JUMPINGFLAG="%JUMPINGFLAG%" /D_DRAGGINGFLAG="%DRAGGINGFLAG%"^
- /D_NUMBERFLAG="%NUMBERFLAG%"
+ /D_NUMBERFLAG="%NUMBERFLAG%" /D_TASKBARSCROLLFLAG="%TASKBARSCROLLFLAG%"
 
-@set VSDEVCMD2022=%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat
-@set VSDEVCMD2026=%ProgramFiles(x86)%\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat
+REM @set VSDEVCMD2022=%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat
+@set VSDEVCMD2022=d:\soft\msvc\setup_x64.bat
+REM @set VSDEVCMD2026=%ProgramFiles(x86)%\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat
 @set INSTALLERSDIR=%REPODIR%\installers
 @set VDTOOLS11SDIR=%REPODIR%\vdtools11
 @set LIBDIR=%REPODIR%\libraries

@@ -1,10 +1,14 @@
 # VD Tools 11
 <img width="500" height="500" alt="vdtools11" src="https://github.com/user-attachments/assets/aa295e9d-dcd1-4d93-b293-ce965a904e9b" />
 
-Lightweight extension for Windows 11 virtual desktops with three core features:
+Lightweight extension for Windows 11 virtual desktops with four core features:
 - Jump to an arbitrary virtual desktop via keyboard shortcut
 - Move a window to an arbitrary virtual desktop via keyboard shortcut
 - Move a window to an adjacent virtual desktop via keyboard shortcut
+- Switch to an adjacent virtual desktop by scrolling on the taskbar
+
+Enable **Switch Desktops By Scrolling Taskbar** from the tray menu. Scroll up to
+switch to the previous desktop or down to switch to the next desktop.
 
 ## Tutorial
 1. Create four virtual desktops:

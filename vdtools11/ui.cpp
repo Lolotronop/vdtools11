@@ -6,6 +6,7 @@
 #include "prop.h"
 
 #define WM_USER_TRAYICON    (WM_USER + 1)
+#define WM_USER_TASKBAR_SCROLL (WM_USER + 2)
 #define ID_TRAY_APP_ICON    (1002)
 #define ID_MENU_ITEM1       (1003)
 #define ID_MENU_ITEM2       (1004)
@@ -34,6 +35,10 @@
 #define ID_HOTKEY18         (1027)
 #define ID_HOTKEY19         (1028)
 #define ID_HOTKEY20         (1029)
+#define ID_MENU_TASKBAR_SCROLL (1030)
+
+#define SCROLL_TO_PREVIOUS  (1)
+#define SCROLL_TO_NEXT      (2)
 
 void (*uiJumpToDesktop)(UINT, BOOL);
 UINT (*uiGetCurrentDesktop)(void);
@@ -41,10 +46,12 @@ DWORD (*uiStartOnHomeChecked)(void);
 DWORD (*uiJumpingChecked)(void);
 DWORD (*uiDraggingChecked)(void);
 DWORD (*uiNumberChecked)(void);
+DWORD (*uiTaskbarScrollChecked)(void);
 void (*uiToggleStartOnHome)(void);
 void (*uiToggleJumping)(void);
 void (*uiToggleDragging)(void);
 void (*uiToggleNumber)(void);
+void (*uiToggleTaskbarScroll)(void);
 static HINSTANCE m_hInstance;
 static HWND m_hWnd;
 static NOTIFYICONDATA m_nid;
@@ -53,6 +60,97 @@ static HWINEVENTHOOK m_hNamechangeEvent;
 static HWINEVENTHOOK m_hHideEvent;
 static HICON m_hIcon;
 static UINT m_numberDisplayed;
+static HHOOK m_hTaskbarMouseHook;
+static int m_taskbarWheelRemainder;
+
+BOOL IsPointOnTaskbar(POINT pt)
+{
+    HWND hWnd = WindowFromPoint(pt);
+
+    if (!hWnd)
+    {
+        return FALSE;
+    }
+
+    HWND hRoot = GetAncestor(hWnd, GA_ROOT);
+    WCHAR className[64];
+
+    if (!GetClassName(hRoot, className, ARRAYSIZE(className)))
+    {
+        return FALSE;
+    }
+
+    return (0 == lstrcmp(className, TEXT("Shell_TrayWnd"))) ||
+           (0 == lstrcmp(className, TEXT("Shell_SecondaryTrayWnd")));
+}
+
+LRESULT CALLBACK TaskbarMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if ((nCode == HC_ACTION) && (wParam == WM_MOUSEWHEEL))
+    {
+        MSLLHOOKSTRUCT *pMouse = (MSLLHOOKSTRUCT *)lParam;
+
+        if (IsPointOnTaskbar(pMouse->pt))
+        {
+            int delta = (SHORT)HIWORD(pMouse->mouseData);
+
+            // Do not combine partial wheel movements in opposing directions.
+            if (((delta > 0) && (m_taskbarWheelRemainder < 0)) ||
+                ((delta < 0) && (m_taskbarWheelRemainder > 0)))
+            {
+                m_taskbarWheelRemainder = 0;
+            }
+
+            m_taskbarWheelRemainder += delta;
+
+            while (m_taskbarWheelRemainder >= WHEEL_DELTA)
+            {
+                PostMessage(m_hWnd, WM_USER_TASKBAR_SCROLL, SCROLL_TO_PREVIOUS, 0);
+                m_taskbarWheelRemainder -= WHEEL_DELTA;
+            }
+
+            while (m_taskbarWheelRemainder <= -WHEEL_DELTA)
+            {
+                PostMessage(m_hWnd, WM_USER_TASKBAR_SCROLL, SCROLL_TO_NEXT, 0);
+                m_taskbarWheelRemainder += WHEEL_DELTA;
+            }
+
+            // Prevent Explorer from handling the same wheel movement.
+            return 1;
+        }
+
+        m_taskbarWheelRemainder = 0;
+    }
+
+    return CallNextHookEx(m_hTaskbarMouseHook, nCode, wParam, lParam);
+}
+
+void uiHookTaskbarScroll(void)
+{
+    if (m_hTaskbarMouseHook)
+    {
+        return;
+    }
+
+    m_taskbarWheelRemainder = 0;
+    m_hTaskbarMouseHook = SetWindowsHookEx(WH_MOUSE_LL, TaskbarMouseProc, m_hInstance, 0);
+
+    if (!m_hTaskbarMouseHook)
+    {
+        logError(TEXT("Could not hook taskbar mouse events."));
+    }
+}
+
+void uiUnhookTaskbarScroll(void)
+{
+    if (m_hTaskbarMouseHook)
+    {
+        (void)UnhookWindowsHookEx(m_hTaskbarMouseHook);
+        m_hTaskbarMouseHook = NULL;
+    }
+
+    m_taskbarWheelRemainder = 0;
+}
 
 void ShowDesktopNumber(void)
 {
@@ -312,6 +410,7 @@ void ShowMenu(void)
     AppendMenu(hMenu, MF_STRING | uiJumpingChecked(), ID_MENU_ITEM2, TEXT("Jump To Desktop Using Shortcut"));
     AppendMenu(hMenu, MF_STRING | uiDraggingChecked(), ID_MENU_ITEM3, TEXT("Move Windows To Adjacent Desktop"));
     AppendMenu(hMenu, MF_STRING | uiNumberChecked(), ID_MENU_ITEM4, TEXT("Show Desktop Number In Tray"));
+    AppendMenu(hMenu, MF_STRING | uiTaskbarScrollChecked(), ID_MENU_TASKBAR_SCROLL, TEXT("Switch Desktops By Scrolling Taskbar"));
 
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hMenu, MF_STRING, ID_MENU_ABOUT, TEXT("About"));
@@ -348,6 +447,12 @@ void ShowMenu(void)
         (uiNumberChecked()) ? uiHookWinEvents() : UnhookWinEvents();
     }
 
+    if (ID_MENU_TASKBAR_SCROLL == ret)
+    {
+        uiToggleTaskbarScroll();
+        (uiTaskbarScrollChecked()) ? uiHookTaskbarScroll() : uiUnhookTaskbarScroll();
+    }
+
     if (ID_MENU_ABOUT == ret)
     {
         MessageBox(NULL, TEXT("" APPNAME " v" MAJORVER "." MINORVER "." PATCHVER "."), TEXT("About"), MB_ICONINFORMATION);
@@ -368,6 +473,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    case WM_USER_TASKBAR_SCROLL:
+    {
+        UINT idx = uiGetCurrentDesktop();
+        uiJumpToDesktop((SCROLL_TO_PREVIOUS == wParam) ? idx - 1 : idx + 1, FALSE);
+        return 0;
+    }
     case WM_USER_TRAYICON:
         switch (LOWORD(lParam))
         {
@@ -389,6 +500,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         DestroyWindow(hWnd);
         break;
     case WM_DESTROY:
+        uiUnhookTaskbarScroll();
         Shell_NotifyIcon(NIM_DELETE, &m_nid);
         PostQuitMessage(0);
         return 0;
@@ -422,6 +534,8 @@ void uiCreateWindow(void)
     m_hHideEvent = 0;
     m_hIcon = 0;
     m_numberDisplayed = 0;
+    m_hTaskbarMouseHook = 0;
+    m_taskbarWheelRemainder = 0;
 
     // Register the window class.
     WNDCLASS wc = {0};

@@ -43,6 +43,11 @@ DWORD prefNumberChecked(void)
     return RegGetValueConvenience(NUMBERFLAG, TEXT("Failed to get registry value " NUMBERFLAG "."));
 }
 
+DWORD prefTaskbarScrollChecked(void)
+{
+    return RegGetValueConvenience(TASKBARSCROLLFLAG, TEXT("Failed to get registry value " TASKBARSCROLLFLAG "."));
+}
+
 DWORD Inverse(DWORD value)
 {
     if (value)
@@ -98,4 +103,10 @@ void prefToggleNumber(void)
 {
     DWORD value = Inverse(prefNumberChecked());
     RegSetValueExConvenience(NUMBERFLAG, value, TEXT("Failed to set registry value " NUMBERFLAG "."));
+}
+
+void prefToggleTaskbarScroll(void)
+{
+    DWORD value = Inverse(prefTaskbarScrollChecked());
+    RegSetValueExConvenience(TASKBARSCROLLFLAG, value, TEXT("Failed to set registry value " TASKBARSCROLLFLAG "."));
 }
