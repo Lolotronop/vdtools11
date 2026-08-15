@@ -37,9 +37,12 @@
 #define ID_HOTKEY20         (1029)
 #define ID_MENU_TASKBAR_SCROLL (1030)
 #define ID_MENU_WHITE_NUMBER (1031)
+#define ID_HOTKEY_SCROLL_PREVIOUS (1032)
+#define ID_HOTKEY_SCROLL_NEXT (1033)
 
 #define SCROLL_TO_PREVIOUS  (1)
 #define SCROLL_TO_NEXT      (2)
+#define INTERNAL_SCROLL_MODIFIERS (MOD_CONTROL | MOD_ALT | MOD_SHIFT | MOD_NOREPEAT)
 
 void (*uiJumpToDesktop)(UINT, BOOL);
 UINT (*uiGetCurrentDesktop)(void);
@@ -65,6 +68,8 @@ static HICON m_hIcon;
 static UINT m_numberDisplayed;
 static HHOOK m_hTaskbarMouseHook;
 static int m_taskbarWheelRemainder;
+static BOOL m_scrollPreviousHotKeyRegistered;
+static BOOL m_scrollNextHotKeyRegistered;
 
 BOOL IsPointOnTaskbar(POINT pt)
 {
@@ -141,6 +146,22 @@ void uiHookTaskbarScroll(void)
     if (!m_hTaskbarMouseHook)
     {
         logError(TEXT("Could not hook taskbar mouse events."));
+        return;
+    }
+
+    // Pressing a registered hotkey grants foreground activation permission.
+    // Ctrl+Alt+Shift+F23/F24 are generated internally so wheel switching can
+    // follow the exact same WM_HOTKEY and COM path as the user-facing shortcuts
+    // while being extremely unlikely to collide with another application.
+    m_scrollPreviousHotKeyRegistered = RegisterHotKey(
+        m_hWnd, ID_HOTKEY_SCROLL_PREVIOUS, INTERNAL_SCROLL_MODIFIERS, VK_F23);
+    m_scrollNextHotKeyRegistered = RegisterHotKey(
+        m_hWnd, ID_HOTKEY_SCROLL_NEXT, INTERNAL_SCROLL_MODIFIERS, VK_F24);
+
+    if (!m_scrollPreviousHotKeyRegistered || !m_scrollNextHotKeyRegistered)
+    {
+        logError(TEXT("Could not register internal taskbar scrolling hot keys."));
+        uiUnhookTaskbarScroll();
     }
 }
 
@@ -152,7 +173,74 @@ void uiUnhookTaskbarScroll(void)
         m_hTaskbarMouseHook = NULL;
     }
 
+    if (m_scrollPreviousHotKeyRegistered)
+    {
+        (void)UnregisterHotKey(m_hWnd, ID_HOTKEY_SCROLL_PREVIOUS);
+        m_scrollPreviousHotKeyRegistered = FALSE;
+    }
+
+    if (m_scrollNextHotKeyRegistered)
+    {
+        (void)UnregisterHotKey(m_hWnd, ID_HOTKEY_SCROLL_NEXT);
+        m_scrollNextHotKeyRegistered = FALSE;
+    }
+
     m_taskbarWheelRemainder = 0;
+}
+
+void AddInternalKeyInput(INPUT inputs[], UINT *pCount, WORD virtualKey, DWORD flags)
+{
+    inputs[*pCount].type = INPUT_KEYBOARD;
+    inputs[*pCount].ki.wVk = virtualKey;
+    inputs[*pCount].ki.dwFlags = flags;
+    (*pCount)++;
+}
+
+void SendInternalScrollHotKey(WORD virtualKey)
+{
+    INPUT inputs[8] = {0};
+    UINT count = 0;
+    BOOL controlAlreadyDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+    BOOL altAlreadyDown = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+    BOOL shiftAlreadyDown = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+
+    if (!controlAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_CONTROL, 0);
+    }
+
+    if (!altAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_MENU, 0);
+    }
+
+    if (!shiftAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_SHIFT, 0);
+    }
+
+    AddInternalKeyInput(inputs, &count, virtualKey, 0);
+    AddInternalKeyInput(inputs, &count, virtualKey, KEYEVENTF_KEYUP);
+
+    if (!shiftAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_SHIFT, KEYEVENTF_KEYUP);
+    }
+
+    if (!altAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_MENU, KEYEVENTF_KEYUP);
+    }
+
+    if (!controlAlreadyDown)
+    {
+        AddInternalKeyInput(inputs, &count, VK_CONTROL, KEYEVENTF_KEYUP);
+    }
+
+    if (SendInput(count, inputs, sizeof(INPUT)) != count)
+    {
+        logError(TEXT("Could not trigger the internal taskbar scrolling hot key."));
+    }
 }
 
 void ShowDesktopNumber(void)
@@ -491,11 +579,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_USER_TASKBAR_SCROLL:
-    {
-        UINT idx = uiGetCurrentDesktop();
-        uiJumpToDesktop((SCROLL_TO_PREVIOUS == wParam) ? idx - 1 : idx + 1, FALSE);
+        if (((SCROLL_TO_PREVIOUS == wParam) && m_scrollPreviousHotKeyRegistered) ||
+            ((SCROLL_TO_NEXT == wParam) && m_scrollNextHotKeyRegistered))
+        {
+            SendInternalScrollHotKey((SCROLL_TO_PREVIOUS == wParam) ? VK_F23 : VK_F24);
+        }
         return 0;
-    }
     case WM_USER_TRAYICON:
         switch (LOWORD(lParam))
         {
@@ -553,6 +642,8 @@ void uiCreateWindow(void)
     m_numberDisplayed = 0;
     m_hTaskbarMouseHook = 0;
     m_taskbarWheelRemainder = 0;
+    m_scrollPreviousHotKeyRegistered = FALSE;
+    m_scrollNextHotKeyRegistered = FALSE;
 
     // Register the window class.
     WNDCLASS wc = {0};
@@ -667,6 +758,14 @@ void uiStartMessageLoop(void)
             case ID_HOTKEY20:
                 idx = uiGetCurrentDesktop();
                 uiJumpToDesktop(idx + 1, TRUE);
+                break;
+            case ID_HOTKEY_SCROLL_PREVIOUS:
+                idx = uiGetCurrentDesktop();
+                uiJumpToDesktop(idx - 1, FALSE);
+                break;
+            case ID_HOTKEY_SCROLL_NEXT:
+                idx = uiGetCurrentDesktop();
+                uiJumpToDesktop(idx + 1, FALSE);
                 break;
             }
             break;
