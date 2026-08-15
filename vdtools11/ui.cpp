@@ -36,6 +36,7 @@
 #define ID_HOTKEY19         (1028)
 #define ID_HOTKEY20         (1029)
 #define ID_MENU_TASKBAR_SCROLL (1030)
+#define ID_MENU_WHITE_NUMBER (1031)
 
 #define SCROLL_TO_PREVIOUS  (1)
 #define SCROLL_TO_NEXT      (2)
@@ -47,11 +48,13 @@ DWORD (*uiJumpingChecked)(void);
 DWORD (*uiDraggingChecked)(void);
 DWORD (*uiNumberChecked)(void);
 DWORD (*uiTaskbarScrollChecked)(void);
+DWORD (*uiWhiteNumberChecked)(void);
 void (*uiToggleStartOnHome)(void);
 void (*uiToggleJumping)(void);
 void (*uiToggleDragging)(void);
 void (*uiToggleNumber)(void);
 void (*uiToggleTaskbarScroll)(void);
+void (*uiToggleWhiteNumber)(void);
 static HINSTANCE m_hInstance;
 static HWND m_hWnd;
 static NOTIFYICONDATA m_nid;
@@ -155,6 +158,7 @@ void uiUnhookTaskbarScroll(void)
 void ShowDesktopNumber(void)
 {
     UINT numberToDisplay = uiGetCurrentDesktop() + 1;
+    BOOL useWhiteNumber = uiWhiteNumberChecked();
 
     if (m_numberDisplayed == numberToDisplay)
     {
@@ -193,11 +197,17 @@ void ShowDesktopNumber(void)
         0,          // iCharSet
         0,          // iOutPrecision
         0,          // iClipPrecision
-        0,          // iQuality
+        useWhiteNumber ? NONANTIALIASED_QUALITY : DEFAULT_QUALITY, // iQuality
         0,          // iPitchAndFamily
         0);         // pszFaceName
     HFONT hFontOld = (HFONT)SelectObject(hdcMem, hFont);
     HFONT hFontOld2 = (HFONT)SelectObject(hdcMem2, hFont);
+
+    if (useWhiteNumber)
+    {
+        SetTextColor(hdcMem, RGB(255, 255, 255));
+        SetBkMode(hdcMem, TRANSPARENT);
+    }
 
     // Draw text in the bitmap.
     WCHAR buf[32];
@@ -411,6 +421,7 @@ void ShowMenu(void)
     AppendMenu(hMenu, MF_STRING | uiDraggingChecked(), ID_MENU_ITEM3, TEXT("Move Windows To Adjacent Desktop"));
     AppendMenu(hMenu, MF_STRING | uiNumberChecked(), ID_MENU_ITEM4, TEXT("Show Desktop Number In Tray"));
     AppendMenu(hMenu, MF_STRING | uiTaskbarScrollChecked(), ID_MENU_TASKBAR_SCROLL, TEXT("Switch Desktops By Scrolling Taskbar"));
+    AppendMenu(hMenu, MF_STRING | uiWhiteNumberChecked(), ID_MENU_WHITE_NUMBER, TEXT("Use Pure White Desktop Number"));
 
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hMenu, MF_STRING, ID_MENU_ABOUT, TEXT("About"));
@@ -451,6 +462,12 @@ void ShowMenu(void)
     {
         uiToggleTaskbarScroll();
         (uiTaskbarScrollChecked()) ? uiHookTaskbarScroll() : uiUnhookTaskbarScroll();
+    }
+
+    if (ID_MENU_WHITE_NUMBER == ret)
+    {
+        uiToggleWhiteNumber();
+        if (uiNumberChecked()) RedrawDesktopNumber();
     }
 
     if (ID_MENU_ABOUT == ret)

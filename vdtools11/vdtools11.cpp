@@ -37,11 +37,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR /* pCmdLine */, int /*
     uiDraggingChecked = prefDraggingChecked;
     uiNumberChecked = prefNumberChecked;
     uiTaskbarScrollChecked = prefTaskbarScrollChecked;
+    uiWhiteNumberChecked = prefWhiteNumberChecked;
     uiToggleStartOnHome = prefToggleStartOnHome;
     uiToggleJumping = prefToggleJumping;
     uiToggleDragging = prefToggleDragging;
     uiToggleNumber = prefToggleNumber;
     uiToggleTaskbarScroll = prefToggleTaskbarScroll;
+    uiToggleWhiteNumber = prefToggleWhiteNumber;
     uiSetInstance(hInstance);
     uiCreateWindow();
     uiAddTrayIcon();

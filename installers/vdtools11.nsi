@@ -25,6 +25,7 @@
   !define DRAGGINGFLAG "${_DRAGGINGFLAG}"
   !define NUMBERFLAG "${_NUMBERFLAG}"
   !define TASKBARSCROLLFLAG "${_TASKBARSCROLLFLAG}"
+  !define WHITENUMBERFLAG "${_WHITENUMBERFLAG}"
   !define LNKNAME "${APPNAME}.lnk"
   !define ICONAME "${CLASSNAME}.ico"
   !define ICOPATH "${RESOURCESDIR}\${ICONAME}"
@@ -156,6 +157,7 @@ Section "Install"
     WriteRegDWORD HKCU "${SUBKEY}" "${DRAGGINGFLAG}" ${MF_UNCHECKED}
     WriteRegDWORD HKCU "${SUBKEY}" "${NUMBERFLAG}" ${MF_UNCHECKED}
     WriteRegDWORD HKCU "${SUBKEY}" "${TASKBARSCROLLFLAG}" ${MF_UNCHECKED}
+    WriteRegDWORD HKCU "${SUBKEY}" "${WHITENUMBERFLAG}" ${MF_UNCHECKED}
   ${EndIf}
 
   ;Add settings introduced since the initial installation without resetting them on upgrades.
@@ -163,6 +165,12 @@ Section "Install"
   ReadRegDWORD $0 HKCU "${SUBKEY}" "${TASKBARSCROLLFLAG}"
   ${If} ${Errors}
     WriteRegDWORD HKCU "${SUBKEY}" "${TASKBARSCROLLFLAG}" ${MF_UNCHECKED}
+  ${EndIf}
+
+  ClearErrors
+  ReadRegDWORD $0 HKCU "${SUBKEY}" "${WHITENUMBERFLAG}"
+  ${If} ${Errors}
+    WriteRegDWORD HKCU "${SUBKEY}" "${WHITENUMBERFLAG}" ${MF_UNCHECKED}
   ${EndIf}
 
   ;Store the version number in the registry

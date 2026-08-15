@@ -10,6 +10,9 @@ Lightweight extension for Windows 11 virtual desktops with four core features:
 Enable **Switch Desktops By Scrolling Taskbar** from the tray menu. Scroll up to
 switch to the previous desktop or down to switch to the next desktop.
 
+The tray menu also provides a **Use Pure White Desktop Number** option for the
+dynamically generated desktop-number icon.
+
 ## Tutorial
 1. Create four virtual desktops:
 <img width="1027" height="169" alt="a1b508cf-e2f3-48b8-af71-98280277126f" src="https://github.com/user-attachments/assets/7497d703-7f5b-4537-80d9-f3b3f824ab41" />

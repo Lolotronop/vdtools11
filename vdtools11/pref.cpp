@@ -48,6 +48,11 @@ DWORD prefTaskbarScrollChecked(void)
     return RegGetValueConvenience(TASKBARSCROLLFLAG, TEXT("Failed to get registry value " TASKBARSCROLLFLAG "."));
 }
 
+DWORD prefWhiteNumberChecked(void)
+{
+    return RegGetValueConvenience(WHITENUMBERFLAG, TEXT("Failed to get registry value " WHITENUMBERFLAG "."));
+}
+
 DWORD Inverse(DWORD value)
 {
     if (value)
@@ -109,4 +114,10 @@ void prefToggleTaskbarScroll(void)
 {
     DWORD value = Inverse(prefTaskbarScrollChecked());
     RegSetValueExConvenience(TASKBARSCROLLFLAG, value, TEXT("Failed to set registry value " TASKBARSCROLLFLAG "."));
+}
+
+void prefToggleWhiteNumber(void)
+{
+    DWORD value = Inverse(prefWhiteNumberChecked());
+    RegSetValueExConvenience(WHITENUMBERFLAG, value, TEXT("Failed to set registry value " WHITENUMBERFLAG "."));
 }
