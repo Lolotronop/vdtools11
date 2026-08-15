@@ -2,7 +2,7 @@
 I did not really read the code. Use at your own risk
 
 Changes made:
-- Added Switch Desktops By Scrolling Taskbar option. Caution - implemented using a hack, it presses Ctrl+Alt+Shift+F23/F24 to actually switch the desktops. This is somehow related to windows context stuff and mouse wheel events belonging to the explorer process. Madness, as usual
+- Added Switch Desktops By Scrolling Taskbar option. Caution - implemented using a hack, it presses Ctrl+Alt+Shift+F23/F24 to actually switch the desktops, because other solutions that the LLM presented did not work with the "focus the last window on the desktop" functionality. This is somehow related to windows context stuff and mouse wheel events belonging to the explorer process. Madness, as usual
 - Pure-white desktop number icon rendering, because the original is completely unreadable on a dark background
 
 
