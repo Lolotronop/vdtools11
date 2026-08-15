@@ -1,7 +1,7 @@
 # VD Tools 11
 <img width="500" height="500" alt="vdtools11" src="https://github.com/user-attachments/assets/aa295e9d-dcd1-4d93-b293-ce965a904e9b" />
 
-This is a slop fork of (VD Tools 11)[https://github.com/ptoshkov/vdtools11] by ptoshkov. I did not really read the code. Use at your own risk
+This is a slop fork of [VD Tools 11](https://github.com/ptoshkov/vdtools11) by ptoshkov. I did not really read the code. Use at your own risk
 Changes made:
 - Added Switch Desktops By Scrolling Taskbar option. Caution - implemented using a hack, it presses Ctrl+Alt+Shift+F23/F24 to actually switch the desktops. This is somehow related to windows context stuff and mouse wheel events belonging to the explorer process. Madness, as usual
 - Pure-white desktop number icon rendering, because the original is completely unreadable on a dark background
